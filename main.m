@@ -9,3 +9,57 @@
 % 
 % Dr. Emrah Onat (eonat87@yahoo.com)
 % Dr. Adnan Orduyilmaz (orduyilmaz@gmail.com)
+
+close all;
+clear all;
+clc
+
+%% Parameters
+
+f0  = 200e6; % Starting frequency of chirp (Hz)
+N   = 32768; % Number of points to sample pulse
+tau = 10e-6; % Pulse width (seconds)
+B   = 20e6;  % Bandwidth of chirp (Hz)
+
+noiselevel = 1; % Noise Level
+
+dt = 2*tau/N;          % Setup time axis
+fs = 1/dt;             % Sampling Frequency
+t = (-tau:dt:tau-dt)'; % Time Interval
+
+
+%% LFM
+[f(:,1) phi_t(:,1) s(:,1)] = getlfm(f0,tau,B,t);
+wtype = ["LFM"];    % Generate chirped waveform
+
+%% Taylor 7 NLFM
+[f(:,2) phi_t(:,2) s(:,2)] = gettws(7,f0,tau,B,t);
+wtype = [wtype,"Taylor 7"];
+
+%% Taylor 30 NLFM
+[f(:,3) phi_t(:,3) s(:,3)] = gettws(30,f0,tau,B,t);
+wtype = [wtype,"Taylor 30"];
+
+%% Tangent NLFM
+alfa = 2.5;
+[f(:,4) phi_t(:,4) s(:,4)] = gettbw(alfa,f0,tau,B,t);
+wtype = [wtype,"Tangent"];
+
+%% Hiperbolic NLFM
+[f(:,5) phi_t(:,5) s(:,5)] = gethfm(f0,tau,B,t);
+wtype = [wtype,"Hyperbolic"];
+
+% Create pulse
+s(find(abs(t)>tau/2),:) = 0;
+f(find(abs(t)>tau/2),:) = 0;     
+
+% Figure
+fplot1 = linspace(-fs/2,fs/2,length(t))';
+figure
+plot(fplot1*1e-6,abs(fft(s)))
+legend(wtype)
+
+% Noise Addition
+noisefix = noiselevel*randn(size(s));
+h  = flipud(s) + noisefix;
+hx = flipud(s);
